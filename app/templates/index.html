@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Testing</title>
+</head>
+<body>
+    <h2>http sql</h2>
+    <div id="userBox">
+        <div>
+            Database: <br/>
+            <input id="dbName" name="dbName" type="text"><br/>
+            Username: <br/>
+            <input id="uname" name="uname" type="text"><br/>
+            Password: <br/>
+            <input id="pass" name="pass" type="password"><br/>
+            <button id="loginButton">Login</button>
+        </div>
+    </div>
+    <hr />
+    <div id="queryBox">
+        Table:<br/>
+        <select id="tableSelect"></select></br>
+        Query:<br/>
+        <textarea id="queryText" cols="80" rows="3"></textarea><br/>
+        <button id="queryButton">Submit</button>
+    </div>
+    <div id="outputContainer">
+    </div>
+
+    <script type="text/javascript">
+        let buildTableSelect = function(tables) {
+            let tableSelect = document.getElementById("tableSelect");
+            tableSelect.innerHTML = "";
+            for (let table of tables) {
+                let opt = document.createElement("option");
+                opt.innerText = table.name;
+                opt.value = table.name;
+                opt.schema = table.schema;
+                tableSelect.appendChild(opt);
+            }
+
+        };
+        let buildResults = function(results) {
+            let outputContainer = document.getElementById("outputContainer");
+            outputContainer.innerHTML = "";
+            let resultTable = document.createElement("table");
+            outputContainer.appendChild(resultTable);
+            let first = true;
+            for (let result of results) {
+                if (first) {
+                    let headerRow = document.createElement("tr");
+                    resultTable.appendChild(headerRow);
+                    for (let col of Object.keys(result)) {
+                        let th = document.createElement("th");
+                        th.innerText = col;
+                        headerRow.appendChild(th);
+                    }
+                    first = false;
+
+                }
+                let tr = document.createElement("tr");
+                resultTable.appendChild(tr);
+                for (let col of Object.keys(result)) {
+                    let td = document.createElement("td");
+                    td.innerText = result[col];
+                    tr.appendChild(td);
+                }
+            }
+        };
+        let dbNameInput = document.getElementById("dbName");
+        let unameInput = document.getElementById("uname");
+        let pwdInput = document.getElementById("pass");
+        let loginButton = document.getElementById("loginButton");
+        let tableSelect = document.getElementById("tableSelect");
+        let queryTextbox = document.getElementById("queryText");
+        let queryButton = document.getElementById("queryButton");
+        let outputContainer = document.getElementById("outputContainer");
+        loginButton.onclick = function() {
+            let uname = unameInput.value;
+            let pass = pwdInput.value;
+            let dbName = dbNameInput.value;
+            let http = new XMLHttpRequest();
+            let url = `/db/${dbName}/table?user=${uname}&pass=${pass}`;
+            http.onreadystatechange = function() {
+                if (http.readyState == 4 && http.status == 200) {
+                    let tables = JSON.parse(http.responseText);
+                    console.log(tables);
+                    buildTableSelect(tables);
+                }
+            };
+            http.open("GET", url, true);
+            http.send();
+        };
+        queryButton.onclick = function() {
+            let uname = unameInput.value;
+            let pass = pwdInput.value;
+            let dbName = dbNameInput.value;
+            let table = tableSelect.value;
+            let query = queryTextbox.value;
+            let url = `/db/${dbName}/query?user=${uname}&pass=${pass}&query=${query}`;
+            let http = new XMLHttpRequest();
+            http.onreadystatechange = function() {
+                if (http.readyState == 4 && http.status == 200) {
+                    let results = JSON.parse(http.responseText);
+                    console.log(results);
+                    buildResults(results);
+                }
+            };
+            http.open("GET", url, true);
+            http.send();
+
+        }
+    </script>
+</body>
+</html>
